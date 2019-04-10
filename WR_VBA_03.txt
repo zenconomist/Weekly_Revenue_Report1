@@ -1,0 +1,237 @@
+Sub wr3_variant_beallitas()
+'
+' variant_beallitas Makró
+'
+
+'
+
+Call turbo_be
+
+Call declare_variables
+
+
+    Workbooks(M_FN).Activate
+    Sheets("Alapadatok").Select
+    Range("A2").Select
+    ActiveCell.FormulaR1C1 = "=+TODAY()"
+    ActiveWorkbook.Save
+    
+    Sheets(M_SN).Select
+    Range("B5").Select
+    ActiveCell.FormulaR1C1 = "=+""KW""&WEEKNUM(Alapadatok!R[-3]C[-1])"
+    Range("B5").Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    ActiveWorkbook.Save
+    
+    Sheets("Alapadatok").Select
+    Range("D2").Select
+    Selection.Copy
+    Range("E2").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+        
+    Workbooks(M_FN).Sheets("Alapadatok").Range("F2").Select
+    Selection.Copy
+    Range("G2").Select
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+
+
+            week = Workbooks(M_FN).Sheets(M_SN).Range("week").Value
+            date_today = Workbooks(M_FN).Sheets(M_SN).Range("B4").Value
+            backup_v = week & "_" & date_today
+            BI_backup_fp = "K:\Kontrolling\03_REPORTING\03_Iwka\2019\WR\01_MASTER\02_Backup\BI\" & backup_v & "\"
+            backup_FP = Workbooks(M_FN).Sheets(M_SN).Range("backup_FP").Value
+            bu_exp_fp = Workbooks(M_FN).Sheets(M_SN).Range("bu_exp_fp").Value
+
+        On Error Resume Next
+        If DirExists(backup_FP) Then Kill backup_FP & "\*.*"
+        On Error Resume Next
+        If DirExists(bu_exp_fp) Then Kill bu_exp_fp & "\*.*"
+        On Error Resume Next
+        If DirExists(bu_exp_fp) Then RmDir bu_exp_fp
+        On Error Resume Next
+        If DirExists(backup_FP) Then RmDir backup_FP
+        
+
+Call turbo_ki
+
+End Sub
+
+Sub wr3_get_kuka_de()
+
+Call turbo_be
+
+Call declare_variables
+
+    Workbooks.Open Filename:=BI_fp & "\WR_BI_KUKA_DE.xls", UpdateLinks:=0
+    Windows("WR_BI_KUKA_DE.xls").Activate
+    Range("F16").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Workbooks(M_FN).Activate
+    Sheets(kuka_de_sn).Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Application.CutCopyMode = False
+    Range("G1").Value = "RA-Wert"
+    Range("H1").Value = "AB-Wert"
+    Workbooks("WR_BI_KUKA_DE.xls").Close
+
+Call turbo_ki
+
+End Sub
+
+Sub wr3_get_wr_ra_ab_sum()
+
+Call turbo_be
+
+Call declare_variables
+
+    Workbooks.Open Filename:=BI_fp & "\WR_SUM_RA_AB.xls", UpdateLinks:=0
+    Windows("WR_SUM_RA_AB.xls").Activate
+    Range("F16").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Workbooks(M_FN).Activate
+    Sheets("WR_SUM_RA_AB").Select
+    Range("A1").Select
+    ActiveSheet.Paste
+    Range("A1").Value = "RA-Wert"
+    Range("B1").Value = "AB-Wert"
+
+    Application.CutCopyMode = False
+    Workbooks("WR_SUM_RA_AB.xls").Close
+
+Call turbo_ki
+
+End Sub
+
+Sub wr3_wr_analyzer_backup()
+'
+' wr_analyzer_backup Makró
+'
+
+'
+Call turbo_be
+   
+Call declare_variables
+
+Dim i As Integer
+Dim range_v As String
+Dim fname As String
+Dim b_fn As String
+Dim lastcolumn As Integer
+
+
+On Error Resume Next
+If DirExists(BI_backup_fp) Then Kill BI_backup_fp & "\*.*"
+
+If Not DirExists(BI_backup_fp) Then MkDir BI_backup_fp
+'If Not DirExists(BI_backup_fp & "Export\") Then MkDir BI_backup_fp & "Export\"
+
+    For i = 15 To 17
+    
+        range_v = "B" & i
+        fname = Workbooks(M_FN).Sheets(M_SN).Range(range_v).Value
+    
+        Workbooks.Open Filename:= _
+            BI_fp & "\" & fname & ".xls", _
+            UpdateLinks:=0, ReadOnly:=1
+            
+        Windows(fname & ".xls").Activate
+        Range("F16").Select
+        Range(Selection, Selection.End(xlToRight)).Select
+        Range(Selection, Selection.End(xlDown)).Select
+        Selection.Copy
+        b_fn = backup_v & "_" & fname & ".xlsx"
+        Workbooks.Add
+        
+        Sheets("Munka1").Select
+        Range("A1").Select
+        ActiveSheet.Paste
+        Application.CutCopyMode = False
+        Range("A1").Select
+        Range(Selection, Selection.End(xlToRight)).Select
+        Range(Selection, Selection.End(xlDown)).Select
+        lastcolumn = Selection.CurrentRegion.Columns.Count
+        
+        Range("A1").Offset(0, lastcolumn - 2).Value = "RA-Wert"
+        Range("A1").Offset(0, lastcolumn - 1).Value = "AB-Wert"
+        
+        ActiveWorkbook.SaveAs Filename:= _
+            BI_backup_fp & b_fn _
+            , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+        ActiveWindow.Close
+        
+        Windows(fname & ".xls").Activate
+        ActiveWindow.Close (False)
+        
+        
+    Next
+    
+Call turbo_ki
+
+End Sub
+
+Sub wr3_BI_Alap_Copy()
+
+Call turbo_be
+
+Call declare_variables
+Dim b_fn As String
+
+backup_v = week & "_" & date_today
+BI_backup_fp = "K:\Kontrolling\03_REPORTING\03_Iwka\2019\WR\01_MASTER\02_Backup\BI\" & backup_v & "\"
+
+If Not DirExists(BI_backup_fp) Then MkDir BI_backup_fp
+
+        b_fn = backup_v & "_WR_BI_Alap.xlsx"
+
+        
+        Workbooks.Open Filename:= _
+            BI_backup_fp & b_fn, _
+            UpdateLinks:=0
+
+        Kill at_FP & "\" & alaptabla
+
+        ActiveWorkbook.SaveAs Filename:= _
+            at_FP & "\" & alaptabla _
+            , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+        ActiveWindow.Close
+
+Call turbo_ki
+
+End Sub
+
+Sub wr3_wr_pt_update()
+
+Workbooks.Open at_FP & "\FBL3N_PT_aktual.XLSX", UpdateLinks:=0
+
+tabl_formaz "A1", "wr_pt"
+
+Workbooks.Open at_FP & "\Törzs-adatok\Plusz_tételek.xlsx", UpdateLinks:=0
+
+    Sheets("Plusz_Tételek").Select
+    Range("H3").Select
+    ActiveCell.FormulaR1C1 = _
+        "=-SUM(FBL3N_PT_aktual.XLSX!wr_pt[Összeg saját pénznemben])"
+    Range("H3").Select
+    Selection.Copy
+    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+        :=False, Transpose:=False
+    Application.CutCopyMode = False
+    ActiveWorkbook.Save
+    ActiveWorkbook.Close
+    
+    Workbooks("FBL3N_PT_aktual.XLSX").Activate
+    ActiveWorkbook.Close savechanges:=1
+
+End Sub

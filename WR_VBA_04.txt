@@ -1,0 +1,265 @@
+Sub wr4_check_ro_bi()
+'
+' wr_check1 Makró
+'
+
+Call turbo_be
+Call declare_variables
+'
+    Workbooks.Open Filename:= _
+        exp_fp & "\2_6_BI_Teljes_CCO.xlsx" _
+        , UpdateLinks:=0, Notify:=False
+        
+        tabl_formaz "A1", "fullBI_" & week
+
+            ''táblázatba az IC/DG választót betenni
+            
+            Columns("J:J").Select
+            Selection.Insert Shift:=xlToRight, CopyOrigin:=xlFormatFromLeftOrAbove
+            Range("fullBI_" & week & "[[#Headers],[Oszlop1]]").Select
+            ActiveCell.FormulaR1C1 = "IC/DG"
+            Range("J2").Select
+            ActiveCell.FormulaR1C1 = "=+IF([@[PG_Code]]=""IC"",""IC"",""DG"")"
+
+    Sheets.Add.Name = "pivot"
+    
+    Sheets("pivot").Select
+    
+    pivotIng "fullBI_" & week, "pivot", "A3", "wr_pivot", "Profit Center Name"
+    
+        ActiveSheet.PivotTables("wr_pivot").PivotCache.Refresh
+        With ActiveSheet.PivotTables("wr_pivot").PivotFields("IC/DG")
+            .Orientation = xlPageField
+            .Position = 1
+        End With
+        ActiveSheet.PivotTables("wr_pivot").PivotFields("IC/DG").ClearAllFilters
+        ActiveSheet.PivotTables("wr_pivot").PivotFields("IC/DG").CurrentPage = "DG"
+        With ActiveSheet.PivotTables("wr_pivot").PivotFields("Profit Center Name")
+        On Error Resume Next
+            .PivotItems("").Visible = False
+            .PivotItems("CS College + Trainin").Visible = False
+            .PivotItems("CS Field and Remote").Visible = False
+            .PivotItems("CS Parts and Repair").Visible = False
+            .PivotItems("PC CS - Eng&Consult").Visible = False
+            .PivotItems("PC MPF - Others").Visible = False
+            .PivotItems("PC MPF - Others401060100_Skonto").Visible = False
+            .PivotItems("PC MPF - OthersPénztár").Visible = False
+            .PivotItems("PC MPF - OthersTIEszközeladás").Visible = False
+            .PivotItems("PC MPF – ROB-RO").Visible = False
+            .PivotItems("PC-MPF – ROB-MAN-CN").Visible = False
+            .PivotItems("Profit Center Name").Visible = False
+        On Error GoTo 0
+        End With
+        ActiveSheet.PivotTables("wr_pivot").AddDataField ActiveSheet.PivotTables( _
+            "wr_pivot").PivotFields("RA-Vegl"), "Összeg / RA-Vegl", xlSum
+        ActiveSheet.PivotTables("wr_pivot").AddDataField ActiveSheet.PivotTables( _
+            "wr_pivot").PivotFields("AB-Wert"), "Összeg / AB-Wert", xlSum
+        
+    
+    '''IC Refurb-re egyeztetõ
+                    Sheets("pivot").Range("A20").Select
+                    pivotIng "fullBI_" & week, "pivot", "A20", "wr_pivot_ic", "Profit Center Name"
+
+                    ActiveSheet.PivotTables("wr_pivot_ic").PivotCache.Refresh
+                    With ActiveSheet.PivotTables("wr_pivot_ic").PivotFields("IC/DG")
+                        .Orientation = xlPageField
+                        .Position = 1
+                    End With
+                    ActiveSheet.PivotTables("wr_pivot_ic").PivotFields("IC/DG").ClearAllFilters
+                    ActiveSheet.PivotTables("wr_pivot_ic").PivotFields("IC/DG").CurrentPage = "IC"
+                    With ActiveSheet.PivotTables("wr_pivot_ic").PivotFields("Profit Center Name")
+                    On Error Resume Next
+                        .PivotItems("").Visible = False
+                        .PivotItems("CS College + Trainin").Visible = False
+                        .PivotItems("CS Field and Remote").Visible = False
+                        .PivotItems("CS Parts and Repair").Visible = False
+                        .PivotItems("PC CS - Eng&Consult").Visible = False
+                        .PivotItems("PC MPF - Others").Visible = False
+                        .PivotItems("PC MPF - Others401060100_Skonto").Visible = False
+                        .PivotItems("PC MPF - OthersPénztár").Visible = False
+                        .PivotItems("PC MPF - OthersTIEszközeladás").Visible = False
+                        .PivotItems("PC MPF – ROB-RO").Visible = False
+                        .PivotItems("PC-MPF – ROB-MAN-CN").Visible = False
+                        .PivotItems("Profit Center Name").Visible = False
+                        .PivotItems("PC MPF - Automotive").Visible = False
+                        .PivotItems("PC MPF - Electronics").Visible = False
+                        .PivotItems("PC MPF - Mach.Autom.").Visible = False
+                        .PivotItems("PC MPF - Consumer").Visible = False
+                        .PivotItems("PC MPF - Metal & Arc").Visible = False
+                    On Error GoTo 0
+                    End With
+                    ActiveSheet.PivotTables("wr_pivot_ic").AddDataField ActiveSheet.PivotTables( _
+                        "wr_pivot").PivotFields("RA-Vegl"), "Összeg / RA-Vegl", xlSum
+                    ActiveSheet.PivotTables("wr_pivot_ic").AddDataField ActiveSheet.PivotTables( _
+                        "wr_pivot_ic").PivotFields("AB-Wert"), "Összeg / AB-Wert", xlSum
+        
+
+    Columns("B:D").Select
+    Application.Run "PERSONAL.XLSB!szamforma"
+   
+    
+    
+    Workbooks.Open Filename:= _
+        at_FP & "\" & robert_new _
+        , UpdateLinks:=0
+    
+    Sheets(robert_SN).Select
+    
+    tabl_formaz "A1", "robert_" & week
+
+    Workbooks("2_6_BI_Teljes_CCO.xlsx").Activate
+    Sheets("pivot").Select
+    
+    pivotIng at_FP & "\" & robert_new & "!robert_" & week, _
+        "pivot", "F1", "robert_pivot"
+
+
+        ActiveSheet.PivotTables("robert_pivot").RepeatAllLabels xlRepeatLabels
+        With ActiveSheet.PivotTables("robert_pivot").PivotFields("DG/IC")
+            .Orientation = xlPageField
+            .Position = 1
+        End With
+        ActiveSheet.PivotTables("robert_pivot").PivotFields("DG/IC").CurrentPage = _
+            "(All)"
+        With ActiveSheet.PivotTables("robert_pivot").PivotFields("DG/IC")
+            .PivotItems("IC").Visible = False
+        End With
+        ActiveSheet.PivotTables("robert_pivot").PivotFields("DG/IC"). _
+            EnableMultiplePageItems = True
+        With ActiveSheet.PivotTables("robert_pivot").PivotFields("Divisionen")
+            .Orientation = xlRowField
+            .Position = 1
+        End With
+        ActiveSheet.PivotTables("robert_pivot").AddDataField ActiveSheet.PivotTables( _
+            "robert_pivot").PivotFields("Árbevétel ( RA= Rechnungsausgang)"), _
+            "Összeg / Árbevétel ( RA= Rechnungsausgang)", xlSum
+        ActiveSheet.PivotTables("robert_pivot").AddDataField ActiveSheet.PivotTables( _
+            "robert_pivot").PivotFields("Rendelés (AB= Auftragsbestand)"), _
+            "Összeg / Rendelés (AB= Auftragsbestand)", xlSum
+        With ActiveSheet.PivotTables("robert_pivot").PivotFields("Divisionen")
+        On Error Resume Next
+            .PivotItems("").Visible = False
+            .PivotItems("CS College + Trainin").Visible = False
+            .PivotItems("CS Field and Remote").Visible = False
+            .PivotItems("CS Parts and Repair").Visible = False
+            .PivotItems("PC CS - Eng&Consult").Visible = False
+            .PivotItems("PC MPF - Others").Visible = False
+            .PivotItems("PC MPF - Others401060100_Skonto").Visible = False
+            .PivotItems("PC MPF - OthersPénztár").Visible = False
+            .PivotItems("PC MPF - OthersTIEszközeladás").Visible = False
+            .PivotItems("PC MPF – ROB-RO").Visible = False
+            .PivotItems("PC-MPF – ROB-MAN-CN").Visible = False
+            .PivotItems("Profit Center Name").Visible = False
+        On Error GoTo 0
+        End With
+        
+            '''IC Refurb-re egyeztetõ
+                    pivotIng at_FP & "\" & robert_new & "!robert_" & week, _
+                        "pivot", "F20", "robert_pivot_ic"
+                
+                
+                        ActiveSheet.PivotTables("robert_pivot_ic").RepeatAllLabels xlRepeatLabels
+                        With ActiveSheet.PivotTables("robert_pivot_ic").PivotFields("DG/IC")
+                            .Orientation = xlPageField
+                            .Position = 1
+                        End With
+                        ActiveSheet.PivotTables("robert_pivot_ic").PivotFields("DG/IC").CurrentPage = _
+                            "(All)"
+                        With ActiveSheet.PivotTables("robert_pivot_ic").PivotFields("DG/IC")
+                            .PivotItems("DG").Visible = False
+                        End With
+                        ActiveSheet.PivotTables("robert_pivot_ic").PivotFields("DG/IC"). _
+                            EnableMultiplePageItems = True
+                        With ActiveSheet.PivotTables("robert_pivot_ic").PivotFields("Divisionen")
+                            .Orientation = xlRowField
+                            .Position = 1
+                        End With
+                        ActiveSheet.PivotTables("robert_pivot_ic").AddDataField ActiveSheet.PivotTables( _
+                            "robert_pivot_ic").PivotFields("Árbevétel ( RA= Rechnungsausgang)"), _
+                            "Összeg / Árbevétel ( RA= Rechnungsausgang)", xlSum
+                        ActiveSheet.PivotTables("robert_pivot_ic").AddDataField ActiveSheet.PivotTables( _
+                            "robert_pivot_ic").PivotFields("Rendelés (AB= Auftragsbestand)"), _
+                            "Összeg / Rendelés (AB= Auftragsbestand)", xlSum
+                        With ActiveSheet.PivotTables("robert_pivot_ic").PivotFields("Divisionen")
+                        On Error Resume Next
+                            .PivotItems("").Visible = False
+                            .PivotItems("CS College + Trainin").Visible = False
+                            .PivotItems("CS Field and Remote").Visible = False
+                            .PivotItems("CS Parts and Repair").Visible = False
+                            .PivotItems("PC CS - Eng&Consult").Visible = False
+                            .PivotItems("PC MPF - Others").Visible = False
+                            .PivotItems("PC MPF - Others401060100_Skonto").Visible = False
+                            .PivotItems("PC MPF - OthersPénztár").Visible = False
+                            .PivotItems("PC MPF - OthersTIEszközeladás").Visible = False
+                            .PivotItems("PC MPF – ROB-RO").Visible = False
+                            .PivotItems("PC-MPF – ROB-MAN-CN").Visible = False
+                            .PivotItems("Profit Center Name").Visible = False
+                            .PivotItems("PC MPF - Automotive").Visible = False
+                            .PivotItems("PC MPF - Electronics").Visible = False
+                            .PivotItems("PC MPF - Mach.Autom.").Visible = False
+                        On Error GoTo 0
+                        End With
+        
+    
+    
+    Columns("G:H").Select
+    Application.Run "PERSONAL.XLSB!szamforma"
+
+    Sheets.Add.Name = "Egyeztetõ"
+    Sheets("pivot").Select
+    Cells.Select
+    Selection.Copy
+    Sheets("Egyeztetõ").Select
+    Range("A1").Select
+    Application.Run "PERSONAL.XLSB!ertekszambeill"
+    Range("J3").Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "check"
+    Range("J4").Select
+    Application.CutCopyMode = False
+    ActiveCell.FormulaR1C1 = "=+RC[-8]-RC[-3]"
+    Range("J4").Select
+    Selection.Copy
+    Range("J4:K10").Select
+    ActiveSheet.Paste
+    Range("J21:K21").Select
+    ActiveSheet.Paste
+    Application.CutCopyMode = False
+    Selection.FormatConditions.Add Type:=xlCellValue, Operator:=xlGreater, _
+        Formula1:="=0"
+    Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+    With Selection.FormatConditions(1).Font
+        .Color = -16383844
+        .TintAndShade = 0
+    End With
+    With Selection.FormatConditions(1).Interior
+        .PatternColorIndex = xlAutomatic
+        .Color = 13551615
+        .TintAndShade = 0
+    End With
+    Selection.FormatConditions(1).StopIfTrue = False
+    Selection.FormatConditions.Add Type:=xlCellValue, Operator:=xlLess, _
+        Formula1:="=0"
+    Selection.FormatConditions(Selection.FormatConditions.Count).SetFirstPriority
+    With Selection.FormatConditions(1).Font
+        .Color = -16383844
+        .TintAndShade = 0
+    End With
+    With Selection.FormatConditions(1).Interior
+        .PatternColorIndex = xlAutomatic
+        .Color = 13551615
+        .TintAndShade = 0
+    End With
+    Selection.FormatConditions(1).StopIfTrue = False
+    ActiveWorkbook.SaveAs Filename:= _
+        bu_exp_fp & "\" & week & "_2_6_BI_Teljes_CCO_egyeztetõ.xlsx" _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+
+    
+    Cells.Select
+    Selection.EntireColumn.AutoFit
+    
+    
+Call turbo_ki
+End Sub
+

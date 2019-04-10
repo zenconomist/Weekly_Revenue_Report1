@@ -1,0 +1,220 @@
+'''WR befejezõ lépések:
+'0. ACCESS-bõl a 3_1-es és a 3_3-as Query-k exportja -> ACCESS saját makró
+'1. makró -> WR_MASTER-ben a múlt heti adatokat értékbeillesztéssel átmásolni a múlt heti fülre
+'2. makró -> WR_MASTER 3_1-es és 3_3-as füleire bemásolni az új értékeket
+
+    '3. manual-> ellenõrizni az eltéréseket
+
+'4. makró -> múlt heti fájlok lementése új néven
+'5. makró -> adatok átírása az új fájlokban -> sheetname-ek és adott hét kiválasztása a legördülõbõl
+'6. makró -> adatok bemásolása WR_MASTER-bõl az új fájlokba.
+
+Sub wr5_elozo_het_copy()
+'
+' wr5_elozo_het_copy WR_MASTER-ben a múlt heti adatokat értékbeillesztéssel átmásolni a múlt heti fülre
+'
+Call declare_variables
+
+    Workbooks(M_FN).Activate
+
+    Sheets("CW_akt_EUR").Select
+    Columns("D:E").Select
+    Selection.Copy
+    Sheets("CW_elhet_EUR").Select
+    Columns("D:E").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+    Sheets("CWakt_U").Select
+    Columns("D:E").Select
+    Range("D55").Activate
+    Application.CutCopyMode = False
+    Selection.Copy
+    Sheets("CW_elhet_U").Select
+    Columns("D:E").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+    ActiveWorkbook.Save
+End Sub
+
+Sub wr5_access_wr_export_copy()
+'
+'  wr5_access_wr_export_copy: WR_MASTER 3_1-es és 3_3-as füleire bemásolni az új értékeket
+'
+
+'
+    Application.WindowState = xlNormal
+    Windows("3_1_WR.xlsx").Activate
+    Cells.Select
+    Selection.Copy
+    Windows(M_FN).Activate
+    Sheets("3_1_WR").Select
+    Cells.Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+    Application.WindowState = xlNormal
+    Windows("3_3_WR_UNITS.xlsx").Activate
+    Cells.Select
+    Selection.Copy
+    Windows(M_FN).Activate
+    Sheets("3_3_WR_U").Select
+    Cells.Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+    Application.CutCopyMode = False
+    Windows("3_3_WR_UNITS.xlsx").Activate
+    ActiveWindow.Close savechanges:=False
+    Windows("3_1_WR.xlsx").Activate
+    ActiveWindow.Close savechanges:=False
+    ActiveWorkbook.Save
+End Sub
+
+
+Sub wr5_WR_final_steps()
+'
+' wr5_WR_final_steps Makró
+'4. makró -> múlt heti fájlok lementése új néven
+'5. makró -> adatok átírása az új fájlokban -> sheetname-ek és adott hét kiválasztása a legördülõbõl
+'6. makró -> adatok bemásolása WR_MASTER-bõl az új fájlokba.
+
+'
+Call turbo_be
+'
+Call declare_variables
+Dim e_week As String
+If week_act < 10 Then e_week = "0" Else e_week = ""
+        
+        
+Dim e_month As String
+If month_act < 10 Then e_month = "0" Else e_month = ""
+
+    Workbooks.Open Filename:=upl_fp & upl_hu_old
+    
+    Windows(M_FN).Activate
+    Workbooks.Open Filename:=upl_fp & upl_ro_old
+        
+    Windows(upl_hu_old).Activate
+    Sheets("CW" & week_before).Select
+    Sheets("CW" & week_before).Name = "CW" & week_act
+    Sheets("UploadBCS_ROB_HU_CW" & week_before).Select
+    Sheets("UploadBCS_ROB_HU_CW" & week_before).Name = "UploadBCS_ROB_HU_CW" & week_act
+    Sheets("CW" & week_act).Select
+        
+        Range("C8").Value = "'" & e_week & week_act
+        Range("C9").Value = "'" & e_month & month_act
+    
+    ActiveWorkbook.SaveAs Filename:=upl_fp & upl_fn_hu _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+        
+    Windows(upl_ro_old).Activate
+    Sheets("CW" & week_before).Select
+    Sheets("CW" & week_before).Name = "CW" & week_act
+    Sheets("UploadBCS_ROB_RO_CW" & week_before).Select
+    Sheets("UploadBCS_ROB_RO_CW" & week_before).Name = "UploadBCS_ROB_RO_CW" & week_act
+    Sheets("CW" & week_act).Select
+    
+        Range("C8").Value = "'" & e_week & week_act
+        Range("C9").Value = "'" & e_month & month_act
+
+    ActiveWorkbook.SaveAs Filename:=upl_fp & upl_fn_ro _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+    
+    Sheets("CW" & week_act).Select
+    Windows(M_FN).Activate
+    Sheets("CW_akt_EUR").Select
+    Range("D5:D48").Select
+    Selection.Copy
+    Windows(upl_fn_hu).Activate
+    Range("D16").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Windows(upl_fn_hu).Activate
+    Windows(M_FN).Activate
+    Sheets("CW_akt_EUR").Select
+    Range("D56:D99").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_hu).Activate
+    Range("D117").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Sheets("CW_akt_EUR").Select
+    Range("E5:E48").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_ro).Activate
+    Range("D16").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Sheets("CW_akt_EUR").Select
+    Range("E56:E99").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_ro).Activate
+    ActiveWindow.SmallScroll Down:=99
+    Range("D117").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Sheets("CWakt_U").Select
+    Range("D5:D48").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_ro).Activate
+    Windows(upl_fn_hu).Activate
+    Range("D66").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Sheets("CWakt_U").Select
+    Range("D55:D98").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_hu).Activate
+    Range("D167").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Sheets("CWakt_U").Select
+    Range("E5:E48").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_ro).Activate
+    Range("D66").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(M_FN).Activate
+    Sheets("CWakt_U").Select
+    Range("E55:E98").Select
+    Application.CutCopyMode = False
+    Selection.Copy
+    Windows(upl_fn_ro).Activate
+    Range("D167").Select
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:=xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Windows(upl_fn_hu).Activate
+    Application.CutCopyMode = False
+    ActiveWorkbook.Save
+    Windows(upl_fn_ro).Activate
+    ActiveWorkbook.Save
+    Windows(upl_fn_hu).Activate
+    Sheets("UploadBCS_ROB_HU_CW" & week_act).Select
+    ActiveWorkbook.SaveAs Filename:= _
+        upl_fp & "Weekly Reporting_New Upload File_CW" & week_act & "_ROB_HU.csv" _
+        , FileFormat:=xlCSV, CreateBackup:=False
+    ActiveWindow.Close savechanges:=False
+    ActiveWorkbook.Save
+    Sheets("UploadBCS_ROB_RO_CW" & week_act).Select
+    ActiveWorkbook.SaveAs Filename:= _
+        upl_fp & "Weekly Reporting_New Upload File_CW" & week_act & "_ROB_RO.csv" _
+        , FileFormat:=xlCSV, CreateBackup:=False
+    ActiveWindow.Close savechanges:=False
+    
+Call turbo_ki
+
+End Sub
+
+

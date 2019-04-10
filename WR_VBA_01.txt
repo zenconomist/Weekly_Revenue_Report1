@@ -1,0 +1,239 @@
+Sub wr1_adatok_formaz()
+
+    Call turbo_be
+        Call wr1_del_4_4
+        Call wr1_alaptabla_formaz
+        Call wr1_robert_copy
+        Call wr1_aktual_athelyez
+        Call wr3_get_kuka_de
+        Call wr3_get_wr_ra_ab_sum
+        Call wr3_wr_pt_update
+    Call turbo_ki
+
+End Sub
+
+Sub wr1_del_4_4()
+
+Call declare_variables
+
+Dim fp As String
+
+fp = exp_fp & "\4_4_FS10N_teljes.xlsx"
+
+    del_file fp
+
+
+fp = exp_fp & "\2_6_BI_Teljes_CCO.xlsx"
+
+    del_file fp
+    
+fp = exp_fp & "\0_1_CCO_To-Update.xlsx"
+
+    del_file fp
+
+
+End Sub
+
+
+
+Sub wr1_aktual_athelyez()
+'
+' aktual_athelyez Makró
+'
+Call declare_variables
+'
+
+Dim file_name As String
+
+
+If Not DirExists(backup_FP) Then MkDir backup_FP
+If Not DirExists(bu_exp_fp) Then MkDir bu_exp_fp
+
+i = 1
+file_name = Workbooks(M_FN).Sheets("file_name_list").Range("A" & i).Value
+
+    Do While file_name <> ""
+            ChDir at_FP
+            Workbooks.Open Filename:= _
+                at_FP & "\" & file_name _
+                , UpdateLinks:=0, ReadOnly:=1
+            ChDir backup_FP
+            ActiveWorkbook.SaveAs Filename:= _
+                backup_FP & "\" & week & "_" & file_name _
+                , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+            ActiveWindow.Close
+            i = i + 1
+            file_name = Workbooks(M_FN).Sheets("file_name_list").Range("A" & i).Value
+    Loop
+    
+''ok
+
+End Sub
+
+
+Sub wr1_alaptabla_formaz()
+'
+' alaptabla_formaz Makró
+'
+''megnyitja az Analyser-bõl kimásolt teljes adattáblát (2-soros fejléccel másoljuk ki), lementjük egy helyre, nevet adunk neki,
+'''a paramétereket pedig megadjuk a Master fájl MASTER fülön. A megadott adatok alapján megformázza a fejlécet, és táblázat-formátumra hozzuk az alaptáblát,
+'''illetve a táblázatnak megadjuk az aktuális hét nevét
+
+Call declare_variables
+
+'
+    On Error Resume Next
+    Kill ft_FP & "\" & alaptabla_v0
+    
+    Workbooks.Open Filename:= _
+                at_FP & "\" & alaptabla, UpdateLinks:=0
+    Windows(alaptabla).Activate
+    
+    Range("D2").Select
+    ActiveCell.FormulaR1C1 = "'Profit Center Name"
+    Range("F2").Select
+    ActiveCell.FormulaR1C1 = "'Regulierer Name"
+'    Range("I1:J1").Select
+'    Selection.Copy
+'    Range("I2").Select
+'    Selection.PasteSpecial Paste:=xlPasteValues, Operation:=xlNone, SkipBlanks _
+'        :=False, Transpose:=False
+'    Rows("1:1").Select
+'    Application.CutCopyMode = False
+'    Selection.Delete Shift:=xlUp
+
+Dim tablanev1 As String
+    tablanev1 = "alaptabla"
+    
+'táblázatként megformázza az adatokat
+    tabl_formaz "A1", tablanev1
+
+    Windows(alaptabla).Activate
+    ChDir ft_FP
+
+    ActiveWorkbook.SaveAs Filename:= _
+        ft_FP & "\" & alaptabla_v0 _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+    Sheets("Munka1").Select
+    Sheets("Munka1").Name = "BI_alap"
+    ActiveWorkbook.Save
+    
+'Call IC_szures
+    
+    Windows(alaptabla_v0).Activate
+    ActiveWindow.Close
+    
+
+End Sub
+
+Sub wr1_robert_copy()
+'
+' robert_copy Makró
+'
+Call declare_variables
+
+'
+    On Error Resume Next
+    Kill at_FP & "\" & robert_new
+
+
+    ChDir "K:\Közös\Vertrieb\2019"
+    Workbooks.Open Filename:="K:\Közös\Vertrieb\2019\" & robert_at _
+        , UpdateLinks:=0, ReadOnly:=1
+        
+Dim rob_sn As String
+rob_sn = "Robot ért+CS RO 2019_DG"
+
+    Sheets(rob_sn).Select
+    Sheets(rob_sn).Copy
+    ChDir at_FP
+    ActiveWorkbook.SaveAs Filename:= _
+        at_FP & "\" & robert_new _
+        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+
+    Windows(robert_new).Activate
+    
+    ActiveSheet.AutoFilter.ShowAllData
+    
+    Sheets.Add.Name = robert_SN
+    Sheets(robert_SN).Move Before:=Sheets(1)
+    
+    Sheets(rob_sn).Select
+    
+    Range("A1").Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Selection.Copy
+    Sheets(robert_SN).Select
+    
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+    
+    Application.CutCopyMode = False
+    
+    Range("A:A,Q:Q,R:R").Select
+    Selection.NumberFormat = "@"
+    
+    Sheets(robert_SN).Move Before:=Sheets(1)
+    ActiveWorkbook.Save
+    ActiveWindow.Close
+
+    Workbooks(robert_at).Close False
+End Sub
+
+'Sub IC_szures()
+''
+'' IC_szures Makró
+''
+'
+''
+'    Windows("BI_formazott.xlsx").Activate
+'
+'    Range("K1").Select
+'    ActiveCell.FormulaR1C1 = "IC/DG"
+'
+'    Range("K2").Select
+'
+'    ActiveCell.FormulaR1C1 = _
+'        "=+IF(LEFT([@[Regulierer Name]],4)=""KUKA"",""IC"",""DG"")"
+'
+'    Range("K3").Select
+'    ActiveSheet.ListObjects("alaptabla").Range.AutoFilter Field:=11, Criteria1 _
+'        :="IC"
+'
+'    Range("alaptabla[[#Headers],[Faktura]]").Select
+'
+'    Range(Selection, Selection.End(xlToRight)).Select
+'    Range(Selection, Selection.End(xlDown)).Select
+'    Selection.Copy
+'    Workbooks.Add
+'
+'    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+'        xlNone, SkipBlanks:=False, Transpose:=False
+'
+'    Application.CutCopyMode = False
+'
+'    tabl_formaz "A1", "BI_IC"
+'
+'    Range("BI_IC[#All]").Select
+'    ActiveSheet.ListObjects("BI_IC").TableStyle = "TableStyleLight1"
+'    Range("BI_IC[[#Headers],[Faktura]]").Select
+'
+'    ChDir _
+'        at_FP
+'
+'    ActiveWorkbook.SaveAs Filename:= _
+'        at_FP & "BI_formazott_IC.xlsx" _
+'        , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+'
+'    Windows("BI_formazott.xlsx").Activate
+'
+'    ActiveSheet.ShowAllData
+'
+'    ActiveWorkbook.Save
+'    Windows(M_FN).Activate
+'
+'End Sub
+
+
+

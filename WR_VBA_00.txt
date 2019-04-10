@@ -1,0 +1,266 @@
+Public M_FN As String
+Public M_SN As String
+Public alaptabla As String
+Public week As String
+Public at_FP As String
+Public ft_FP As String
+Public alaptabla_v0 As String
+Public robert_at As String
+Public robert_SN As String
+Public backup_FP As String
+Public bu_exp_fp As String
+Public exp_fp As String
+Public kuka_de As String
+Public kuka_de_sn As String
+
+Public BI_fp As String
+Public BI_backup_fp As String
+Public backup_v As String
+Public sum_ra_ab As String
+Public sum_ra_ab_de As String
+Public BI_KUKA_DE As String
+Public BI_Alap As String
+Public date_today As String
+Public robert_new As String
+
+Public upl_fp As String
+Public upl_fn_hu As String
+Public upl_fn_ro As String
+
+Public upl_hu_old As String
+Public upl_ro_old As String
+
+Public week_act As Integer
+Public month_act As Integer
+Public date_before As String
+Public week_before As String
+
+
+Sub declare_variables()
+
+Call turbo_be
+
+    M_FN = "WR_MASTER_Access-hez.xlsm"
+    M_SN = "MASTER"
+    
+Workbooks(M_FN).Activate
+Sheets("Alapadatok").Select
+Range("A3").Select
+Selection.Copy
+
+Workbooks(M_FN).Activate
+Sheets(M_SN).Select
+Range("B4").Select
+
+    Selection.PasteSpecial Paste:=xlPasteValuesAndNumberFormats, Operation:= _
+        xlNone, SkipBlanks:=False, Transpose:=False
+
+
+
+    at_FP = Workbooks(M_FN).Sheets(M_SN).Range("at_FP").Value
+    alaptabla = Workbooks(M_FN).Sheets(M_SN).Range("alaptabla").Value
+    week = Workbooks(M_FN).Sheets(M_SN).Range("week").Value
+    date_today = Workbooks(M_FN).Sheets(M_SN).Range("B4").Value
+    ft_FP = Workbooks(M_FN).Sheets(M_SN).Range("ft_FP").Value
+    alaptabla_v0 = Workbooks(M_FN).Sheets(M_SN).Range("alaptabla_v0").Value
+    robert_at = "Robot értékesítés 2019.xlsx"
+    robert_new = "Robot értékesítés 2019_aktual.xlsx"
+    robert_SN = "robert_alap"
+    backup_FP = Workbooks(M_FN).Sheets(M_SN).Range("backup_FP").Value
+    bu_exp_fp = Workbooks(M_FN).Sheets(M_SN).Range("bu_exp_fp").Value
+    exp_fp = Workbooks(M_FN).Sheets(M_SN).Range("exp_fp").Value
+    
+    
+    kuka_de = "BI_KUKA_Deutschland_aktual.xlsx"
+    kuka_de_sn = "KUKA_DE_akt"
+    BI_fp = "K:\Kontrolling\03_REPORTING\03_Iwka\2019\WR\01_MASTER\01_Aktualis_het_anyagai\BI_actual"
+    backup_v = week & "_" & date_today
+    BI_backup_fp = "K:\Kontrolling\03_REPORTING\03_Iwka\2019\WR\01_MASTER\02_Backup\BI\" & backup_v & "\"
+    
+    sum_ra_ab = "WR_SUM_RA_AB.xls"
+    BI_KUKA_DE = "WR_BI_KUKA_DE.xls"
+    BI_Alap = "WR_BI_Alap.xls"
+    
+    date_before = Workbooks(M_FN).Sheets(M_SN).Range("date_before").Value
+    week_act = Workbooks(M_FN).Sheets(M_SN).Range("week_act").Value
+    month_act = Workbooks(M_FN).Sheets(M_SN).Range("month_act").Value
+
+    week_before = Workbooks(M_FN).Sheets(M_SN).Range("week_before").Value
+    
+    upl_fp = "K:\Kontrolling\03_REPORTING\03_Iwka\2019\WR\"
+    upl_fn_hu = "Weekly Reporting_New Upload File_CW" & week_act & "_ROB_HU.xlsx"
+    upl_hu_old = "Weekly Reporting_New Upload File_CW" & week_before & "_ROB_HU.xlsx"
+    upl_fn_ro = "Weekly Reporting_New Upload File_CW" & week_act & "_ROB_RO.xlsx"
+    upl_ro_old = "Weekly Reporting_New Upload File_CW" & week_before & "_ROB_RO.xlsx"
+    
+Call turbo_ki
+
+End Sub
+
+Sub turbo_be()
+    With Application
+        .ScreenUpdating = False
+        .Calculation = xlCalculationManual
+        .EnableEvents = False
+        .DisplayAlerts = False
+    End With
+End Sub
+
+Sub turbo_ki()
+    With Application
+        .ScreenUpdating = True
+        .Calculation = xlCalculationAutomatic
+        .EnableEvents = True
+        .DisplayAlerts = True
+    End With
+End Sub
+
+Function tabl_formaz(kezdo_cella, tabl_nev)
+    Range(kezdo_cella).Select
+    Range(Selection, Selection.End(xlToRight)).Select
+    Range(Selection, Selection.End(xlDown)).Select
+    Application.CutCopyMode = False
+    ActiveSheet.ListObjects.Add(xlSrcRange, Selection, , xlYes).Name = _
+        tabl_nev
+    Range(tabl_nev & "[#All]").Select
+    ActiveSheet.ListObjects(tabl_nev).TableStyle = "TableStyleLight1"
+End Function
+
+Public Function pivotIng(source, destination, dest_range, pivot_name, Optional rowf1 As Variant, Optional columnf1 As Variant, Optional sumf1 As Variant, Optional sumf2 As Variant _
+                        , Optional sumf3 As Variant, Optional sumf4 As Variant, Optional sumf5 As Variant, Optional sumf6 As Variant)
+
+Dim ptcache As PivotCache
+Dim PT As PivotTable
+
+    Set ptcache = ActiveWorkbook.PivotCaches.Create(xlDatabase, source)
+    Set PT = ActiveSheet.PivotTables.Add(PivotCache:=ptcache, TableDestination:=Sheets(destination).Range(dest_range))
+    PT.Name = pivot_name
+    
+    With PT
+        .ColumnGrand = True
+        .HasAutoFormat = True
+        .DisplayErrorString = False
+        .DisplayNullString = True
+        .EnableDrilldown = True
+        .ErrorString = ""
+        .MergeLabels = False
+        .NullString = ""
+        .PageFieldOrder = 2
+        .PageFieldWrapCount = 0
+        .PreserveFormatting = True
+        .RowGrand = True
+        .SaveData = True
+        .PrintTitles = False
+        .RepeatItemsOnEachPrintedPage = True
+        .TotalsAnnotation = False
+        .CompactRowIndent = 1
+        .InGridDropZones = False
+        .DisplayFieldCaptions = True
+        .DisplayMemberPropertyTooltips = False
+        .DisplayContextTooltips = True
+        .ShowDrillIndicators = True
+        .PrintDrillIndicators = False
+        .AllowMultipleFilters = False
+        .SortUsingCustomLists = True
+        .FieldListSortAscending = False
+        .ShowValuesRow = False
+        .CalculatedMembersInFilters = False
+        .RowAxisLayout xlCompactRow
+    End With
+    With ptcache
+        .RefreshOnFileOpen = False
+        .MissingItemsLimit = xlMissingItemsDefault
+    End With
+    PT.RepeatAllLabels xlRepeatLabels
+
+''opciós paraméterekkel mit kezdjen
+
+            If IsMissing(rowf1) = False Then
+                
+                    With PT.PivotFields(rowf1)
+                        .Orientation = xlRowField
+                        .Position = 1
+                    End With
+            End If
+        
+            If IsMissing(columnf1) = False Then
+            
+                    With PT.PivotFields(columnf1)
+                        .Orientation = xlColumnField
+                        .Position = 2
+                    End With
+            End If
+                    
+            If IsMissing(sumf1) = False Then
+                    
+                    PT.AddDataField PT.PivotFields(sumf1), "Összeg / " & sumf1, xlSum
+                        With PT.PivotFields("Összeg / " & sumf1)
+                            .NumberFormat = "# ##0"
+                        End With
+            End If
+            
+            If IsMissing(sumf2) = False Then
+                    
+                    PT.AddDataField PT.PivotFields(sumf2), "Összeg / " & sumf2, xlSum
+                        With PT.PivotFields("Összeg / " & sumf2)
+                            .NumberFormat = "# ##0"
+                        End With
+            End If
+            
+            If IsMissing(sumf3) = False Then
+                    
+                    PT.AddDataField PT.PivotFields(sumf3), "Összeg / " & sumf3, xlSum
+                        With PT.PivotFields("Összeg / " & sumf3)
+                            .NumberFormat = "# ##0"
+                        End With
+            End If
+
+            If IsMissing(sumf4) = False Then
+                    
+                    PT.AddDataField PT.PivotFields(sumf4), "Összeg / " & sumf4, xlSum
+                        With PT.PivotFields("Összeg / " & sumf4)
+                            .NumberFormat = "# ##0"
+                        End With
+            End If
+
+            If IsMissing(sumf5) = False Then
+                    
+                    PT.AddDataField PT.PivotFields(sumf5), "Összeg / " & sumf5, xlSum
+                        With PT.PivotFields("Összeg / " & sumf5)
+                            .NumberFormat = "# ##0"
+                        End With
+            End If
+
+            If IsMissing(sumf6) = False Then
+                    
+                    PT.AddDataField PT.PivotFields(sumf6), "Összeg / " & sumf6, xlSum
+                        With PT.PivotFields("Összeg / " & sumf6)
+                            .NumberFormat = "# ##0"
+                        End With
+            End If
+
+  
+End Function
+
+Public Sub createNewDirectory(directoryName As String)
+    If Not DirExists(directoryName) Then
+    MkDir (directoryName)
+    End If
+End Sub
+ 
+Function DirExists(DirName As String) As Boolean
+    On Error GoTo ErrorHandler
+    DirExists = GetAttr(DirName) And vbDirectory
+ErrorHandler:
+End Function
+
+
+Function del_file(fp As String)
+    
+    test = Dir(fp)
+    If Not test = "" Then
+        Kill (fp)
+    End If
+    
+End Function
+

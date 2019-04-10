@@ -1,0 +1,120 @@
+Sub wr2_Check_FS10N_BI()
+'
+' Check_FS10N_BI Makró
+'
+Call turbo_be
+
+Call declare_variables
+'
+    'Workbooks("2_6_BI_Teljes_CCO.xlsx").Close
+    
+    Workbooks.Open Filename:=exp_fp & "\4_4_FS10N_teljes.xlsx"
+    Windows("4_4_FS10N_teljes.xlsx").Activate
+    Sheets("_4_4_FS10N_teljes").Select
+        
+        tabl_formaz "A1", "FS10N_full"
+    
+    Range("FS10N_full[#All]").Select
+    Windows(M_FN).Activate
+    Sheets("Összevet_FS10N-BI").Select
+    Range("B2").Select
+    ActiveCell.FormulaR1C1 = _
+        "=+SUM('4_4_FS10N_teljes.xlsx'!FS10N_full[SumOfÖsszeg saját pénznemben])"
+           
+    Columns("B:B").EntireColumn.AutoFit
+    Range("B3").Select
+    
+    Workbooks.Open Filename:=exp_fp & "\2_6_BI_Teljes_CCO.xlsx"
+    Windows("2_6_BI_Teljes_CCO.xlsx").Activate
+        
+    tabl_formaz "A1", "BI_full"
+    
+
+    Windows(M_FN).Activate
+    Sheets("Összevet_FS10N-BI").Range("B3").Select
+    ActiveCell.FormulaR1C1 = "=+SUM('2_6_BI_Teljes_CCO.xlsx'!BI_full[RA-Vegl])+R[13]C"
+    
+    
+    
+    'ide be kell hivatkozni a KUKA_DE programot!
+ '       Sheets("KUKA_DE_akt").Delete
+  '  Call KUKA_DEUTSCHLAND
+    
+    
+        Workbooks.Open Filename:= _
+        at_FP & "\Törzs-adatok\Plusz_tételek.xlsx"
+
+
+    Windows(M_FN).Activate
+    Sheets("Összevet_FS10N-BI").Select
+    Range("B2").Select
+    
+    ActiveCell.FormulaR1C1 = _
+        "=+SUM('4_4_FS10N_teljes.xlsx'!FS10N_full[SumOfÖsszeg saját pénznemben])*-1+Plusz_tételek.xlsx!R5C8+Plusz_tételek.xlsx!R6C8"
+
+    Windows(M_FN).Activate
+    
+    Call wr2_check_AB
+    
+Call turbo_ki
+
+End Sub
+
+Sub wr2_open_master()
+
+    Workbooks.Open Filename:="K:\Kontrolling\03_REPORTING\03_Iwka\2019\WR\01_MASTER\WR_MASTER_Access-hez.xlsm", UpdateLinks:=0
+
+End Sub
+
+Sub wr2_check_AB()
+
+Call declare_variables
+
+    Windows(M_FN).Activate
+    Sheets("Összevet_FS10N-BI").Select
+    Range("B8").Select
+    ChDir _
+        at_FP
+    Workbooks.Open Filename:= _
+        at_FP & "\BI_formazott.xlsx" _
+        , UpdateLinks:=3
+        
+    Windows(M_FN).Activate
+    
+    ActiveCell.FormulaR1C1 = "=+SUM(BI_formazott.xlsx!alaptabla[AB-Wert])"
+    Range("B9").Select
+    ActiveCell.FormulaR1C1 = "=+SUM('2_6_BI_Teljes_CCO.xlsx'!BI_full[AB-Wert])"
+
+End Sub
+
+
+Sub wr2_export_athelyez()
+'
+' export_athelyez Makró
+'
+Call declare_variables
+'
+
+Dim file_name As String
+
+i = 1
+file_name = Workbooks(M_FN).Sheets("file_name_list").Range("B" & i).Value
+
+    Do While file_name <> ""
+            ChDir exp_fp
+            Workbooks.Open Filename:= _
+                exp_fp & "\" & file_name _
+                , UpdateLinks:=0
+            ChDir bu_exp_fp
+            ActiveWorkbook.SaveAs Filename:= _
+                bu_exp_fp & "\" & week & "_" & file_name _
+                , FileFormat:=xlOpenXMLWorkbook, CreateBackup:=False
+            ActiveWindow.Close
+            i = i + 1
+            file_name = Workbooks(M_FN).Sheets("file_name_list").Range("B" & i).Value
+    Loop
+    
+''ok
+
+End Sub
+

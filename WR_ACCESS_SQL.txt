@@ -1,0 +1,215 @@
+'1_1_SUM_RO_per_biz'
+SELECT FBL3N_RO.Bizonylatszám, Sum(FBL3N_RO.[Összeg saját pénznemben]) AS [SumOfÖsszeg saját pénznemben]
+FROM FBL3N_RO
+WHERE (((FBL3N_RO.Bizonylatszám)<>""))
+GROUP BY FBL3N_RO.Bizonylatszám;
+
+'1_2_SUM_PT_per_biz'
+SELECT FBL3N_PT.Bizonylatszám, Sum(FBL3N_PT.[Összeg saját pénznemben]) AS [SumOfÖsszeg saját pénznemben]
+FROM FBL3N_PT
+WHERE FBL3N_PT.Bizonylatszám <> ""
+GROUP BY FBL3N_PT.Bizonylatszám;
+
+'1_3_SUM_HUF_per_biz'
+SELECT FBL3N_HUF.Referenciakulcs, Sum(FBL3N_HUF.[Összeg saját pénznemben]) AS [SumOfÖsszeg saját pénznemben]
+FROM FBL3N_HUF
+WHERE (((FBL3N_HUF.Bizonylatszám)<>""))
+GROUP BY FBL3N_HUF.Referenciakulcs;
+
+'1_4_SUM_CNY_per_biz'
+SELECT FBL5N_CNY.Referenciakulcs, Sum(FBL5N_CNY.[Összeg saját pénznemben]) AS [SumOfÖsszeg saját pénznemben]
+FROM FBL5N_CNY
+WHERE FBL5N_CNY.Referenciakulcs <> ""
+GROUP BY FBL5N_CNY.Referenciakulcs;
+
+'1_5_Kundenauftrag_Telephely_RO'
+SELECT robert_alap.[Vevõi rendelés], robert_alap.Telephely
+FROM robert_alap
+GROUP BY robert_alap.[Vevõi rendelés], robert_alap.Telephely;
+
+'1_6_Land_RG_M1'
+SELECT BI_alap.[Regulierer (RG)], BI_alap.[Regulierer Name], BI_alap.[Land (RG)]
+FROM BI_alap
+GROUP BY BI_alap.[Regulierer (RG)], BI_alap.[Regulierer Name], BI_alap.[Land (RG)];
+
+
+'2_1_RO_teljes'
+SELECT ([1_1 SUM_RO_per_biz].Bizonylatszám) AS Faktura, [1_1 SUM_RO_per_biz].[SumOfÖsszeg saját pénznemben], ([robert_alap].Mezõ1) AS [Regulierer (RG)], ([robert_alap].Cég) AS [Regulierer Name], robert_alap.[DG/IC], ([robert_alap].Telephely) AS [Land (RG)], robert_alap.MPF, robert_alap.Lista, ([robert_alap].[Profit Center]) AS Pr_center, ("0070/" & [Pr_center]) AS [Profit Center], ([robert_alap].Divisionen) AS [Profit Center Name], robert_alap.PSP, robert_alap.[Rendelés felvétel dátuma], robert_alap.[Lemondva?], robert_alap.[Számlázás %], ([robert_alap].[Vevõi rendelés]) AS Kundenauftrag, robert_alap.Számlaszám, robert_alap.[Számla dátuma (év;hó)], robert_alap.[Árbevétel ( RA= Rechnungsausgang)], ([robert_alap].[Rendelés (AB= Auftragsbestand)]) AS [AB-Wert], ([robert_alap].[RA St]) AS [RA St], ([robert_alap].[AB St]) AS [AB St], FBL3N_RO_kivételek.[jó érték], IIf(FBL3N_RO_kivételek.[jó érték]="robert",[robert_alap].[Árbevétel ( RA= Rechnungsausgang)],[1_1 SUM_RO_per_biz].[SumOfÖsszeg saját pénznemben]*-1) AS [RA-Wert]
+FROM ([1_1 SUM_RO_per_biz] LEFT JOIN robert_alap ON [1_1 SUM_RO_per_biz].Bizonylatszám = robert_alap.Számlaszám) LEFT JOIN FBL3N_RO_kivételek ON [1_1 SUM_RO_per_biz].Bizonylatszám = FBL3N_RO_kivételek.Számlaszám;
+
+'2_2_RO_teljes_2'
+SELECT [2_1 RO_teljes].Faktura, [2_1 RO_teljes].[Regulierer (RG)], [2_1 RO_teljes].[Land (RG)], [2_1 RO_teljes].[Regulierer Name], [2_1 RO_teljes].[DG/IC], [2_1 RO_teljes].[Profit Center], [2_1 RO_teljes].[Profit Center Name], [2_1 RO_teljes].Kundenauftrag, ([2_1 RO_teljes].[AB-Wert]*0) AS [AB-Wert], [2_1 RO_teljes].[RA St], [2_1 RO_teljes].[AB St], [2_1 RO_teljes].[RA-Wert]
+FROM [2_1 RO_teljes];
+
+'2_3_BI-RO_teljes1'
+SELECT Faktura, Kundenauftrag, [Profit Center], [Profit Center Name], [Regulierer (RG)], [Regulierer Name], [Land (RG)], [RA-Wert], [AB-Wert]
+FROM BI_alap
+UNION SELECT Faktura, Kundenauftrag, [Profit Center], [Profit Center Name], [Regulierer (RG)], [Regulierer Name], [Land (RG)], [RA-Wert], [AB-Wert]
+FROM [2_2 RO_teljes_2];
+
+'2_4_CNY'
+SELECT [2_3 BI-RO_teljes1].Faktura, [2_3 BI-RO_teljes1].Kundenauftrag, [2_3 BI-RO_teljes1].[Profit Center], [2_3 BI-RO_teljes1].[Profit Center Name], [2_3 BI-RO_teljes1].[Regulierer (RG)], [2_3 BI-RO_teljes1].[Regulierer Name], [2_3 BI-RO_teljes1].[Land (RG)], [2_3 BI-RO_teljes1].[RA-Wert], [2_3 BI-RO_teljes1].[AB-Wert], ([1_4 SUM_CNY_per_biz].[SumOfÖsszeg saját pénznemben]) AS CNY_Sum, IIf(([1_4 SUM_CNY_per_biz].[SumOfÖsszeg saját pénznemben]) Is Not Null,([1_4 SUM_CNY_per_biz].[SumOfÖsszeg saját pénznemben]),([2_3 BI-RO_teljes1].[RA-Wert])) AS CNY
+FROM ([2_3 BI-RO_teljes1] LEFT JOIN [1_3 SUM_HUF_per_biz] ON [2_3 BI-RO_teljes1].Faktura = [1_3 SUM_HUF_per_biz].Referenciakulcs) LEFT JOIN [1_4 SUM_CNY_per_biz] ON [2_3 BI-RO_teljes1].Faktura = [1_4 SUM_CNY_per_biz].Referenciakulcs;
+
+'2_5_BI-RO-CNY-HUF'
+SELECT [2_4_CNY].Faktura, [2_4_CNY].Kundenauftrag, [2_4_CNY].[Profit Center], [2_4_CNY].[Profit Center Name], [2_4_CNY].[Regulierer (RG)], [2_4_CNY].[Regulierer Name], [2_4_CNY].[Land (RG)], [2_4_CNY].[RA-Wert], [2_4_CNY].[AB-Wert], [2_4_CNY].CNY_Sum, [2_4_CNY].CNY, ([1_3 SUM_HUF_per_biz].[SumOfÖsszeg saját pénznemben]) AS HUF_Sum, IIf([1_3 SUM_HUF_per_biz].[SumOfÖsszeg saját pénznemben] Is Not Null,([1_3 SUM_HUF_per_biz].[SumOfÖsszeg saját pénznemben]*-1),[2_4_CNY].CNY) AS [RA-Vegl]
+FROM 2_4_CNY LEFT JOIN [1_3 SUM_HUF_per_biz] ON [2_4_CNY].Faktura = [1_3 SUM_HUF_per_biz].Referenciakulcs;
+
+'2_6_BI_Teljes_CCO'
+SELECT 
+[2_5_BI-RO-CNY-HUF].Faktura, 
+[2_5_BI-RO-CNY-HUF].Kundenauftrag, 
+[2_5_BI-RO-CNY-HUF].[Profit Center], 
+[2_5_BI-RO-CNY-HUF].[Profit Center Name], 
+[2_5_BI-RO-CNY-HUF].[Regulierer (RG)], 
+[2_5_BI-RO-CNY-HUF].[Regulierer Name], 
+[2_5_BI-RO-CNY-HUF].[Land (RG)], 
+[2_5_BI-RO-CNY-HUF].[RA-Vegl], 
+[2_5_BI-RO-CNY-HUF].[AB-Wert], 
+IIf(LEFT([2_5_BI-RO-CNY-HUF].[Regulierer Name],4)="KUKA","IC",CCO_vevolista.[PG Code]) AS PG_Code, 
+IIf(LEFT([2_5_BI-RO-CNY-HUF].[Regulierer Name],4)="KUKA","IC",PG_Codes.Division) AS Division, 
+IIf(LEFT([2_5_BI-RO-CNY-HUF].[Regulierer Name],4)="KUKA","IC",PG_Codes.[Product groups]) AS Product_groups, 
+IIf(LEFT([2_5_BI-RO-CNY-HUF].[Profit Center Name],2)="PC","Products","Service") AS MPF_I
+
+FROM PG_Codes RIGHT JOIN ([2_5_BI-RO-CNY-HUF] LEFT JOIN CCO_vevolista ON [2_5_BI-RO-CNY-HUF].[Regulierer (RG)] = CCO_vevolista.[Code (AG)]) ON (PG_Codes.[PG CODE] = CCO_vevolista.[PG Code]) AND (PG_Codes.[PG CODE] = CCO_vevolista.[PG Code])
+
+UNION SELECT 
+Plusz_Tételek.Faktura, 
+Plusz_Tételek.Kundenauftrag, 
+Plusz_Tételek.[Profit Center], 
+Plusz_Tételek.[Profit Center Name], 
+Plusz_Tételek.[Regulierer (RG)], 
+Plusz_Tételek.[Regulierer Name], 
+Plusz_Tételek.[Land (RG)], 
+Plusz_Tételek.[RA-Vegl], 
+Plusz_Tételek.[AB-Wert], 
+Plusz_Tételek.PG_Code, 
+Plusz_Tételek.Division, 
+Plusz_Tételek.Product_groups, 
+Plusz_Tételek.MPF_I 
+
+FROM Plusz_Tételek;
+
+'2_7_1_BI_teljes_CCO_IConly
+SELECT [2_6_BI_Teljes_CCO].Faktura, [2_6_BI_Teljes_CCO].Kundenauftrag, [2_6_BI_Teljes_CCO].[Profit Center], [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name], [2_6_BI_Teljes_CCO].[Land (RG)], IIf([2_6_BI_Teljes_CCO].[Land (RG)]="RO","RO",IIf([2_6_BI_Teljes_CCO].[Land (RG)]="HU","HU",IIf([2_6_BI_Teljes_CCO].[Land (RG)]="Rumänien","RO",IIf([2_6_BI_Teljes_CCO].[Land (RG)]="Bulgarien","RO","HU")))) AS Telephely_2_7, [2_6_BI_Teljes_CCO].[RA-Vegl], [2_6_BI_Teljes_CCO].[AB-Wert], [2_6_BI_Teljes_CCO].PG_Code, [2_6_BI_Teljes_CCO].Division, [2_6_BI_Teljes_CCO].Product_groups, [2_6_BI_Teljes_CCO].MPF_I
+FROM 2_6_BI_Teljes_CCO
+WHERE (([2_6_BI_Teljes_CCO].PG_Code)="IC");
+
+'2_7_BI_Teljes_CCO_DGonly'
+SELECT [2_6_BI_Teljes_CCO].Faktura, [2_6_BI_Teljes_CCO].Kundenauftrag, [2_6_BI_Teljes_CCO].[Profit Center], [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name], [2_6_BI_Teljes_CCO].[Land (RG)], IIf([2_6_BI_Teljes_CCO].[Land (RG)]="RO","RO",IIf([2_6_BI_Teljes_CCO].[Land (RG)]="HU","HU",IIf([2_6_BI_Teljes_CCO].[Land (RG)]="Rumänien","RO",IIf([2_6_BI_Teljes_CCO].[Land (RG)]="Bulgarien","RO","HU")))) AS Telephely_2_7, [2_6_BI_Teljes_CCO].[RA-Vegl], [2_6_BI_Teljes_CCO].[AB-Wert], [2_6_BI_Teljes_CCO].PG_Code, [2_6_BI_Teljes_CCO].Division, [2_6_BI_Teljes_CCO].Product_groups, [2_6_BI_Teljes_CCO].MPF_I
+FROM 2_6_BI_Teljes_CCO
+WHERE (([2_6_BI_Teljes_CCO].PG_Code)<>"IC");
+
+
+'2_8_BI_OK'
+SELECT [2_7_BI_Teljes_CCO_DGonly].Faktura, [2_7_BI_Teljes_CCO_DGonly].Kundenauftrag, [2_7_BI_Teljes_CCO_DGonly].[Profit Center], [2_7_BI_Teljes_CCO_DGonly].[Profit Center Name], [2_7_BI_Teljes_CCO_DGonly].[Regulierer (RG)], [2_7_BI_Teljes_CCO_DGonly].[Regulierer Name], [2_7_BI_Teljes_CCO_DGonly].[Land (RG)], [2_7_BI_Teljes_CCO_DGonly].[RA-Vegl], [2_7_BI_Teljes_CCO_DGonly].[AB-Wert], [2_7_BI_Teljes_CCO_DGonly].PG_Code, [2_7_BI_Teljes_CCO_DGonly].Division, [2_7_BI_Teljes_CCO_DGonly].Product_groups, [2_7_BI_Teljes_CCO_DGonly].MPF_I, IIF([1_5 Kundenauftrag_Telephely_RO].Telephely<>"",[1_5 Kundenauftrag_Telephely_RO].Telephely,[2_7_BI_Teljes_CCO_DGonly].Telephely_2_7) AS Telephely_vegl
+FROM 2_7_BI_Teljes_CCO_DGonly LEFT JOIN [1_5 Kundenauftrag_Telephely_RO] ON [2_7_BI_Teljes_CCO_DGonly].Kundenauftrag = [1_5 Kundenauftrag_Telephely_RO].[Vevõi rendelés];
+
+'2_9_'
+SELECT [2_6_BI_Teljes_CCO].Faktura, [2_6_BI_Teljes_CCO].Kundenauftrag, [2_6_BI_Teljes_CCO].[Profit Center], [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name], [2_6_BI_Teljes_CCO].[Land (RG)], [2_6_BI_Teljes_CCO].[RA-Vegl], [2_6_BI_Teljes_CCO].[AB-Wert], [2_6_BI_Teljes_CCO].PG_Code, [2_6_BI_Teljes_CCO].Division, [2_6_BI_Teljes_CCO].Product_groups, [2_6_BI_Teljes_CCO].MPF_I, [4_4_FS10N_full].KW
+FROM 2_6_BI_Teljes_CCO LEFT JOIN 4_4_FS10N_full ON [2_6_BI_Teljes_CCO].Faktura = [4_4_FS10N_full].[(Refkulcs];
+
+'0_1_CCO_To-Update'
+SELECT BI_alap.[Regulierer (RG)], BI_alap.[Regulierer Name], CCO_vevolista.[PG Code], Sum(BI_alap.[RA-Wert]) AS [SumOfRA-Wert], Sum(BI_alap.[AB-Wert]) AS [SumOfAB-Wert]
+FROM BI_alap LEFT JOIN (PG_Codes RIGHT JOIN CCO_vevolista ON PG_Codes.[PG CODE] = CCO_vevolista.[PG Code]) ON BI_alap.[Regulierer (RG)] = CCO_vevolista.[Code (AG)]
+GROUP BY BI_alap.[Regulierer (RG)], BI_alap.[Regulierer Name], CCO_vevolista.[PG Code]
+HAVING (((CCO_vevolista.[PG Code]) Is Null) AND ((Left([BI_alap].[Regulierer Name],4))<>"KUKA"));
+
+'3_1_WR'
+SELECT [2_8_BI_OK].Telephely_vegl, [2_8_BI_OK].Division, [2_8_BI_OK].Product_groups, [2_8_BI_OK].MPF_I, Sum([2_8_BI_OK].[RA-Vegl]) AS [SumOfRA-Vegl], Sum([2_8_BI_OK].[AB-Wert]) AS [SumOfAB-Wert]
+FROM 2_8_BI_OK
+GROUP BY [2_8_BI_OK].Telephely_vegl, [2_8_BI_OK].Division, [2_8_BI_OK].Product_groups, [2_8_BI_OK].MPF_I;
+
+'3_2_BI_FULL_per_Faktura'
+SELECT [2_6_BI_Teljes_CCO].Faktura, [2_6_BI_Teljes_CCO].Kundenauftrag, [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name], [2_6_BI_Teljes_CCO].[Land (RG)], Sum([2_6_BI_Teljes_CCO].[RA-Vegl]) AS [SumOfRA-Vegl], Sum([2_6_BI_Teljes_CCO].[AB-Wert]) AS [SumOfAB-Wert]
+FROM 2_6_BI_Teljes_CCO
+GROUP BY [2_6_BI_Teljes_CCO].Faktura, [2_6_BI_Teljes_CCO].Kundenauftrag, [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name], [2_6_BI_Teljes_CCO].[Land (RG)];
+
+'3_3_WR_UNITS'
+SELECT [6_2_Stueckzahlen_2].Telephely, [6_2_Stueckzahlen_2].Division, [6_2_Stueckzahlen_2].[Product groups], [6_2_Stueckzahlen_2].pr_or_ser, Sum([6_2_Stueckzahlen_2].[RA St]) AS [SumOfRA St], Sum([6_2_Stueckzahlen_2].[AB St]) AS [SumOfAB St]
+FROM 6_2_Stueckzahlen_2
+GROUP BY [6_2_Stueckzahlen_2].Telephely, [6_2_Stueckzahlen_2].Division, [6_2_Stueckzahlen_2].[Product groups], [6_2_Stueckzahlen_2].pr_or_ser;
+
+'3_4_M1_Alap'
+SELECT [2_6_BI_Teljes_CCO].[Profit Center Name] & [2_6_BI_Teljes_CCO].[Regulierer (RG)] AS pc_reg_kod, [2_6_BI_Teljes_CCO].[Profit Center], [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], Sum([2_6_BI_Teljes_CCO].[RA-Vegl]) AS [SumOfRA-Vegl], Sum([2_6_BI_Teljes_CCO].[AB-Wert]) AS [SumOfAB-Wert], [2_6_BI_Teljes_CCO].PG_Code, [2_6_BI_Teljes_CCO].Division, [2_6_BI_Teljes_CCO].Product_groups, [2_6_BI_Teljes_CCO].MPF_I
+FROM 2_6_BI_Teljes_CCO
+GROUP BY [2_6_BI_Teljes_CCO].[Profit Center Name] & [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Profit Center], [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].PG_Code, [2_6_BI_Teljes_CCO].Division, [2_6_BI_Teljes_CCO].Product_groups, [2_6_BI_Teljes_CCO].MPF_I;
+
+'3_5_M1_Rg_Land'
+SELECT [3_4_M1_Alap].pc_reg_kod, [3_4_M1_Alap].[Profit Center], [3_4_M1_Alap].[Profit Center Name], [3_4_M1_Alap].[Regulierer (RG)], vevolista_land.[1# név], vevolista_land.Ország, [3_4_M1_Alap].[SumOfRA-Vegl], [3_4_M1_Alap].[SumOfAB-Wert], [3_4_M1_Alap].PG_Code, [3_4_M1_Alap].Division, [3_4_M1_Alap].Product_groups, [3_4_M1_Alap].MPF_I
+FROM 3_4_M1_Alap LEFT JOIN vevolista_land ON [3_4_M1_Alap].[Regulierer (RG)] = vevolista_land.Vevõ;
+
+'3_6_Robert_osszevont'
+SELECT robert_alap.Telephely, robert_alap.[DG/IC], robert_alap.Divisionen, Sum(robert_alap.[Árbevétel ( RA= Rechnungsausgang)]) AS [SumOfÁrbevétel ( RA= Rechnungsausgang)], Sum(robert_alap.[Rendelés (AB= Auftragsbestand)]) AS [SumOfRendelés (AB= Auftragsbestand)], Sum(robert_alap.[RA St]) AS [SumOfRA St], Sum(robert_alap.[AB St]) AS [SumOfAB St]
+FROM robert_alap
+GROUP BY robert_alap.Telephely, robert_alap.[DG/IC], robert_alap.Divisionen
+HAVING (((robert_alap.Telephely)="HU") AND ((robert_alap.[DG/IC])="DG"));
+
+'3_7_BI_osszevont'
+SELECT BI_alap.[Profit Center], BI_alap.[Profit Center Name], Sum(BI_alap.[RA-Wert]) AS [SumOfRA-Wert], Sum(BI_alap.[AB-Wert]) AS [SumOfAB-Wert]
+FROM BI_alap
+WHERE (((BI_alap.[Land (RG)])<>"Rumänien" And (BI_alap.[Land (RG)])<>"Bulgarien")) AND (left(BI_alap.[Regulierer Name],4) <> "KUKA")
+GROUP BY BI_alap.[Profit Center], BI_alap.[Profit Center Name];
+
+'4_1_FS10N_teljes_1'
+SELECT [FS10N_2018_1-6_ho].[Ellenkönyv számlája], [FS10N_2018_1-6_ho].Referenciakulcs, [FS10N_2018_1-6_ho].Bizonylatszám, [FS10N_2018_1-6_ho].Bizonylatfajta, [FS10N_2018_1-6_ho].Bizonylatdátum, [FS10N_2018_1-6_ho].[Összeg saját pénznemben], [FS10N_2018_1-6_ho].[Saját pénznem]
+FROM [FS10N_2018_1-6_ho]
+WHERE  [FS10N_2018_1-6_ho].Referenciakulcs <> ""
+UNION ALL
+SELECT [FS10N_7ho].[Ellenkönyv számlája], [FS10N_7ho].Referenciakulcs, [FS10N_7ho].Bizonylatszám, [FS10N_7ho].Bizonylatfajta, [FS10N_7ho].Bizonylatdátum, [FS10N_7ho].[Összeg saját pénznemben], [FS10N_7ho].[Saját pénznem]
+FROM [FS10N_7ho]
+WHERE  [FS10N_7ho].Referenciakulcs <> ""
+UNION ALL SELECT [FS10N_aktual].[Ellenkönyv számlája], [FS10N_aktual].Referenciakulcs, [FS10N_aktual].Bizonylatszám, [FS10N_aktual].Bizonylatfajta, [FS10N_aktual].Bizonylatdátum, [FS10N_aktual].[Összeg saját pénznemben], [FS10N_aktual].[Saját pénznem]
+FROM [FS10N_aktual]
+WHERE  [FS10N_aktual].Referenciakulcs <> "";
+
+'4_2_FS10N_Refbizszam'
+SELECT IIf(Left([4_1_FS10N_teljes_1].[Referenciakulcs],3)="000",Mid([4_1_FS10N_teljes_1].[Referenciakulcs],4,10),IIf(Len([4_1_FS10N_teljes_1].[Referenciakulcs])>11,Left([4_1_FS10N_teljes_1].[Referenciakulcs],10),[4_1_FS10N_teljes_1].[Referenciakulcs])) AS [(Refkulcs], [4_1_FS10N_teljes_1].[Összeg saját pénznemben], [4_1_FS10N_teljes_1].Bizonylatdátum
+FROM 4_1_FS10N_teljes_1;
+
+'4_3_FS10N_ref-osszeg'
+SELECT [4_2_FS10N_Refbizszam].[(Refkulcs], [4_2_FS10N_Refbizszam].Bizonylatdátum, Sum([4_2_FS10N_Refbizszam].[Összeg saját pénznemben]) AS [SumOfÖsszeg saját pénznemben]
+FROM 4_2_FS10N_Refbizszam
+GROUP BY [4_2_FS10N_Refbizszam].[(Refkulcs], [4_2_FS10N_Refbizszam].Bizonylatdátum
+HAVING Sum([4_2_FS10N_Refbizszam].[Összeg saját pénznemben]) <> 0;
+
+'4_4_FS10N_teljes'
+SELECT [4_3_FS10N_ref-osszeg].[(Refkulcs], [4_3_FS10N_ref-osszeg].Bizonylatdátum, [4_3_FS10N_ref-osszeg].[SumOfÖsszeg saját pénznemben], toerzs_KW_törzs.KW
+FROM [4_3_FS10N_ref-osszeg] LEFT JOIN toerzs_KW_törzs ON [4_3_FS10N_ref-osszeg].Bizonylatdátum = toerzs_KW_törzs.Dátum;
+
+'4_5_FS10N_weekly_sum'
+SELECT [4_4_FS10N_full].KW, Sum([4_4_FS10N_full].[SumOfÖsszeg saját pénznemben]) AS [SumOfSumOfÖsszeg saját pénznemben]
+FROM 4_4_FS10N_full
+GROUP BY [4_4_FS10N_full].KW;
+
+'6_1_Stueckzahlen_alap'
+SELECT robert_alap.Mezõ1, robert_alap.Cég, robert_alap.[DG/IC], robert_alap.Telephely, robert_alap.MPF, robert_alap.[Profit Center], robert_alap.Divisionen, robert_alap.[Vevõi rendelés], robert_alap.Számlaszám, robert_alap.[Árbevétel ( RA= Rechnungsausgang)], robert_alap.[Rendelés (AB= Auftragsbestand)], robert_alap.[RA St], robert_alap.[AB St], PG_Codes.[PG CODE], PG_Codes.Division, PG_Codes.[Product groups]
+FROM PG_Codes RIGHT JOIN (robert_alap LEFT JOIN CCO_vevolista ON robert_alap.Mezõ1 = CCO_vevolista.[Code (AG)]) ON PG_Codes.[PG CODE] = CCO_vevolista.[PG Code]
+WHERE (robert_alap.[RA St] <>0 OR robert_alap.[RA St] Is Not Null) OR (robert_alap.[AB St] <>0 OR robert_alap.[AB St] Is Not Null);
+
+'6_2_Stueckzahlen_2'
+SELECT [6_1_Stueckzahlen_alap].[Customer _Code] AS Kif1, [6_1_Stueckzahlen_alap].Cég, [6_1_Stueckzahlen_alap].[DG/IC], [6_1_Stueckzahlen_alap].Telephely, [6_1_Stueckzahlen_alap].MPF, [6_1_Stueckzahlen_alap].[Profit Center], [6_1_Stueckzahlen_alap].Divisionen, [6_1_Stueckzahlen_alap].[Vevõi rendelés], [6_1_Stueckzahlen_alap].Számlaszám, [6_1_Stueckzahlen_alap].[Árbevétel ( RA= Rechnungsausgang)], [6_1_Stueckzahlen_alap].[Rendelés (AB= Auftragsbestand)], [6_1_Stueckzahlen_alap].[RA St], [6_1_Stueckzahlen_alap].[AB St], [6_1_Stueckzahlen_alap].[PG CODE], [6_1_Stueckzahlen_alap].Division, [6_1_Stueckzahlen_alap].[Product groups], IIf(Left([6_1_Stueckzahlen_alap].[Divisionen],2)="PC","products","service") AS pr_or_ser
+FROM 6_1_Stueckzahlen_alap
+WHERE ((([6_1_Stueckzahlen_alap].[DG/IC])="DG"));
+
+
+'7_1_Vertrieb_pro_Woche_Alap1'
+SELECT [2_8_BI_OK].Faktura, [2_8_BI_OK].Kundenauftrag, [2_8_BI_OK].[Profit Center], [2_8_BI_OK].[Profit Center Name], [2_8_BI_OK].[Regulierer (RG)], [2_8_BI_OK].[Regulierer Name], [2_8_BI_OK].[Land (RG)], [2_8_BI_OK].[RA-Vegl], [2_8_BI_OK].[AB-Wert], [2_8_BI_OK].PG_Code, [2_8_BI_OK].Division, [2_8_BI_OK].Product_groups, [2_8_BI_OK].MPF_I, [2_8_BI_OK].Telephely_vegl, [4_4_FS10N_full].Bizonylatdátum, [4_4_FS10N_full].KW
+FROM 2_8_BI_OK LEFT JOIN 4_4_FS10N_full ON [2_8_BI_OK].Faktura = [4_4_FS10N_full].[(Refkulcs];
+
+'7_2_Vertrieb_RA_Pro_Woche'
+TRANSFORM Sum([7_1_Vertrieb_pro_Woche_Alap1].[RA-Vegl]) AS [SumOfRA-Vegl]
+SELECT [7_1_Vertrieb_pro_Woche_Alap1].Telephely_vegl, [7_1_Vertrieb_pro_Woche_Alap1].Division, [7_1_Vertrieb_pro_Woche_Alap1].[Profit Center Name], [7_1_Vertrieb_pro_Woche_Alap1].MPF_I
+FROM 7_1_Vertrieb_pro_Woche_Alap1
+WHERE ((([7_1_Vertrieb_pro_Woche_Alap1].Division)="Automotive" Or ([7_1_Vertrieb_pro_Woche_Alap1].Division)="Industries") AND (([7_1_Vertrieb_pro_Woche_Alap1].[Profit Center Name])="CS College + Trainin" Or ([7_1_Vertrieb_pro_Woche_Alap1].[Profit Center Name])="CS Field and Remote" Or ([7_1_Vertrieb_pro_Woche_Alap1].[Profit Center Name])="CS Parts and Repair") AND (([7_1_Vertrieb_pro_Woche_Alap1].MPF_I)="Service"))
+GROUP BY [7_1_Vertrieb_pro_Woche_Alap1].Telephely_vegl, [7_1_Vertrieb_pro_Woche_Alap1].Division, [7_1_Vertrieb_pro_Woche_Alap1].[Profit Center Name], [7_1_Vertrieb_pro_Woche_Alap1].MPF_I
+PIVOT [7_1_Vertrieb_pro_Woche_Alap1].KW;
+
+'7_3_Vertr_pW_IC'
+TRANSFORM Sum([2_6_BI_Teljes_CCO].[RA-Vegl]) AS [SumOfRA-Vegl]
+SELECT [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name]
+FROM 2_6_BI_Teljes_CCO LEFT JOIN 4_4_FS10N_full ON [2_6_BI_Teljes_CCO].Faktura = [4_4_FS10N_full].[(Refkulcs]
+WHERE ((([2_6_BI_Teljes_CCO].[Profit Center Name])="CS College + Trainin" Or ([2_6_BI_Teljes_CCO].[Profit Center Name])="CS Field and Remote" Or ([2_6_BI_Teljes_CCO].[Profit Center Name])="CS Parts and Repair") AND (([2_6_BI_Teljes_CCO].Division)="IC"))
+GROUP BY [2_6_BI_Teljes_CCO].[Profit Center Name], [2_6_BI_Teljes_CCO].[Regulierer (RG)], [2_6_BI_Teljes_CCO].[Regulierer Name], [2_6_BI_Teljes_CCO].Division
+PIVOT [4_4_FS10N_full].KW;
+
